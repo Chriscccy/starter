@@ -26,6 +26,12 @@ export default async ({ req, res, log, error }) => {
     return res.text("Pong");
   }
 
+  if(req.path === "/userlist"){
+    return res.json({
+      data: response,
+    })
+  }
+
   return res.json({
     motto: "Build like a team of hundreds_",
     learn: "https://appwrite.io/docs",
