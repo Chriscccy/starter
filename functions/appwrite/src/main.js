@@ -1,31 +1,12 @@
-import { initAppwriteClient, getServices } from './core/appwrite.js';
-import { initRoutes } from './routes/index.js';
+import { Client } from 'node-appwrite';
+import { configureRoutes } from './routes/api.js';
 
-export default async ({ req, res, log, error }) => {
-  try {
-    const client = initAppwriteClient(req);
-    const services = getServices(client);
-    const routes = initRoutes(services);
+export default async ({ req, res }) => {
+  const client = new Client()
+    .setEndpoint(process.env.APPWRITE_ENDPOINT)
+    .setProject(process.env.APPWRITE_PROJECT_ID)
+    .setKey(req.headers['x-appwrite-key'] || '');
 
-    // 路由分发
-    const [_, resource, action] = req.path.split('/');
-
-    switch (resource) {
-      default:
-        return res.json({
-          status: 1,
-          message: 'Available endpoints',
-          endpoints: ['/users/getInfo', '/ping'],
-        });
-    }
-  } catch (err) {
-    error(err.message);
-    return res.json(
-      {
-        status: 1,
-        message: 'Internal server error',
-      },
-      500
-    );
-  }
+  const router = configureRoutes(client);
+  return router.handle(req, res);
 };

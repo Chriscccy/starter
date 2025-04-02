@@ -1,1 +1,0 @@
-const lala = 'woshi test';
