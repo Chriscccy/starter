@@ -1,36 +1,66 @@
-import { Client, Users } from 'node-appwrite';
+import { Client } from 'node-appwrite';
+import { initRoutes } from './router/index.js';
 
-// This Appwrite function will be executed every time your function is triggered
 export default async ({ req, res, log, error }) => {
-  // You can use the Appwrite SDK to interact with other services
-  // For this example, we're using the Users service
+  // 初始化客户端
   const client = new Client()
     .setEndpoint(process.env.APPWRITE_FUNCTION_API_ENDPOINT)
     .setProject(process.env.APPWRITE_FUNCTION_PROJECT_ID)
     .setKey(req.headers['x-appwrite-key'] ?? '');
-  const users = new Users(client);
+
+  // 初始化路由
+  const routes = initRoutes(client);
 
   try {
-    const response = await users.list();
-    // Log messages and errors to the Appwrite Console
-    // These logs won't be seen by your end users
-    log(`Total users: ${response.total}`);
+    // 解析请求路径
+    const [_, route, action, ...params] = req.path.split('/');
+
+    // 路由处理
+    switch (route) {
+      case 'users':
+        return await handleUserRoutes(req, res, routes.users, action, params);
+
+      case 'ping':
+        return res.text('Pong');
+
+      default:
+        return res.json({
+          message: '欢迎使用Appwrite函数API',
+          availableRoutes: [
+            '/users/get/:userId',
+            '/users/email/:email',
+            '/users/list',
+            '/ping',
+          ],
+        });
+    }
   } catch (err) {
-    error('Could not list users: ' + err.message);
+    error(err.message);
+    return res.json({ error: err.message }, 500);
   }
-
-  // The req object contains the request data
-  if (req.path === '/ping') {
-    // Use res object to respond with text(), json(), or binary()
-    // Don't forget to return a response!
-    return res.text('Pong');
-  }
-
-  return res.json({
-    motto: 'Build like a team of hundreds_',
-    learn: 'https://appwrite.io/docs',
-    connect: 'https://appwrite.io/discord',
-    getInspired: 'https://builtwith.appwrite.io',
-    lala: '你妹在哪',
-  });
 };
+
+// 用户路由处理函数
+async function handleUserRoutes(req, res, userRoutes, action, params) {
+  switch (action) {
+    case 'get':
+      const userId = params[0] || req.query.userId;
+      if (!userId) throw new Error('需要提供用户ID');
+      const user = await userRoutes.getUserById(userId);
+      return res.json(user);
+
+    case 'email':
+      const email = params[0] || req.query.email;
+      if (!email) throw new Error('需要提供邮箱地址');
+      const userByEmail = await userRoutes.getUserByEmail(email);
+      return res.json(userByEmail);
+
+    case 'list':
+      const queries = req.query.queries ? JSON.parse(req.query.queries) : [];
+      const users = await userRoutes.listUsers(queries);
+      return res.json(users);
+
+    default:
+      throw new Error('无效的用户操作');
+  }
+}
