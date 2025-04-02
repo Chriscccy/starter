@@ -26,11 +26,11 @@ export default async ({ req, res, log, error }) => {
     return res.text("Pong");
   }
 
-  if(req.path === "/userlist"){
+  if (req.path === "/userlist"){
     return res.json({
       data: "asdawd",
-    })
-  }
+    });
+  };
 
   return res.json({
     motto: "Build like a team of hundreds_",
