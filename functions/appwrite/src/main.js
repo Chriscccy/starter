@@ -28,7 +28,7 @@ export default async ({ req, res, log, error }) => {
 
   if(req.path === "/userlist"){
     return res.json({
-      data: response,
+      data: "asdawd",
     })
   }
 
